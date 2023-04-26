@@ -158,6 +158,7 @@ function createShader(gl, code, type) {
   }
   return shader;
 }
+
 /**
  * creates a program by the given vertex and fragment shader
  * @param gl GL context
@@ -180,6 +181,7 @@ function createProgram(gl, vertex, fragment) {
   }
   return program;
 }
+
 /**
  * checks and updates the canvas size according to its current real size
  * @param gl
@@ -193,6 +195,7 @@ function checkForWindowResize(gl) {
     gl.canvas.height = height;
   }
 }
+
 /**
  * checks whether the given attribute location is valid
  * @param loc
@@ -201,6 +204,7 @@ function checkForWindowResize(gl) {
 function isValidAttributeLocation(loc) {
   return typeof loc === 'number' && loc >= 0;
 }
+
 /**
  * checks whether the given uniform location is valid
  * @param loc
@@ -209,7 +213,6 @@ function isValidAttributeLocation(loc) {
 function isValidUniformLocation(loc) {
   return typeof loc !== 'undefined' && loc instanceof WebGLUniformLocation;
 }
-
 
 /**
  * converts the given hex color, e.g., #FF00FF to an rgba tuple
@@ -818,6 +821,7 @@ class RenderSGNode extends SGNode {
     super.render(context);
   }
 }
+
 /**
  * a factory method for creating a model renderer
  * @param model the model to render
@@ -1245,6 +1249,7 @@ function createSGContext(gl, projectionMatrix) {
     shader: null
   };
 }
+
 /**
  * factory utils
  */
