@@ -226,7 +226,7 @@ function createSceneGraph(gl, resources) {
     .children[0] // three children and pick car
       .children[0] // material node as children and pick it    // todo change if not just material but also something with shader
         .children[0] // render node as children and pick it
-        = new MultiModelRenderSGNode(resources.car_close, resources.car_medium, resources.car_far, 28, 38);
+        = new MultiModelRenderSGNode(resources.car_close, resources.car_medium, resources.car_far, 26, 38);
 
   root.append(carGroup);
   // #endregion
