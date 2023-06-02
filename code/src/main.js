@@ -29,7 +29,9 @@ loadResources({
   // sources are in the folders next to the .obj files
   cargo_spaceship: './src/models/cargo_spaceship/cargo_spaceship.obj',
   fighter_spaceship: './src/models/fighter_spaceship/fighter_spaceship.obj',
-  wrecked_car: './src/models/wrecked_car/wrecked_car.obj',
+  car_close: './src/models/car/car_close.obj',
+  car_medium: './src/models/car/car_medium.obj',
+  car_far: './src/models/car/car_far.obj',
   antenna: './src/models/antenna/antenna.obj',
   holocron: './src/models/holocron/holocron.obj',
 
@@ -69,8 +71,8 @@ function init(resources) {
     camera, 
     [
       // initiation
-      getAnimationMatrix(0, 0, 0, 0, 0, 0, 1),    // just to make sure, that the animation starts at the center
-      getAnimationMatrix(0, 0, 0, 0, 0, 0, 1000), // short delay at start
+      getAnimationMatrix(5, 0, -3, 0, 0, 0, 1),    // just to make sure, that the animation starts at the position we want
+      getAnimationMatrix(5, 0, -3, 0, 0, 0, 1000), // short delay at start, does not count towards the 30 seconds
 
       // move to the right of first planet, rotate left
       getAnimationMatrix(0, 0, 14, 0, 0, 0, 4500),
@@ -102,30 +104,33 @@ function createSceneGraph(gl, resources) {
   const root = new ShaderSGNode(createProgram(gl, resources.vs, resources.fs))
 
   // EDIT: adding nodes
-  // sun
-  sun = createLightSphere(resources, -25, 0, 120, 35);
-  root.append(sun);
+  // #region sun
+  root.append(createLightSphere(resources, -25, 0, 120, 35));
+  // #endregion
   
-  // planet with one moon
+  // #region planet with one moon
   p1 = createPlanet(root, 6, -1.5, 25, 1.5, 10000, 36);    
   createMoon(p1, 3, 1, 0, 0.4);
-    
-  // cargo spaceship
-  s1 = createSpaceObject(
+  // #endregion
+  
+  // #region cargo spaceship
+  createSpaceObject(
     root, resources.cargo_spaceship, 0.3,
     20, -30, 0,     // angles
     100, -10, -50,  // from
     -30, -20, 200,  // to
     25000           // duration
   );
+  // #endregion
 
-  // planet with three moons
+  // #region planet with three moons
   p2 = createPlanet(root, 15, 4.7, 50, 2, 13000, 36, true);  
   createMoon(p2, 3, -1, 0, 0.2);
   createMoon(p2, -2, -1, 3, 0.25);
   createMoon(p2, 4, 1, 0, 0.25);
-
-  // a fighter-spaceship triplet, which scares the pilot
+  // #endregion
+  
+  // #region a fighter-spaceship triplet, which scares the pilot
   createSpaceObject( // left
     root, resources.fighter_spaceship, 0.001,
     100, 220, 200,
@@ -150,7 +155,8 @@ function createSceneGraph(gl, resources) {
     -124.9, 208, 186.5,
     35000
   );
- 
+  // #endregion
+
   // #region big planet with moons which have moons
   p3 = createPlanet(root, -2, -1, 60, 3.5, 19000, 36);
 
@@ -164,7 +170,7 @@ function createSceneGraph(gl, resources) {
   createMoon(p3, -3, -1.5, -5, 0.7);
   // #endregion
   
-  // #region region car in front of biggest planet  
+  // #region car
   carGroup = new TransformationSGNode(
     glm.transform(
       {
@@ -177,45 +183,50 @@ function createSceneGraph(gl, resources) {
   nonCameraAnimations.push(
     new Animation(
       carGroup,
-      getZrotationAnimation(-12, 1, 40, 0, -130, 360, 20000, 36, 1),
+      getZrotationAnimation(-12, 1.5, 40, 0, -130, 360, 20000, 36, 1),
       true // infinite loop
     )
   );
 
   // car
   createSpaceObject(
-    carGroup, resources.wrecked_car, 0.03,
+    carGroup, resources.car_far, 0.03,
     0, 0, 0,
-    0, -2, 0
+    0, -2, 0,
   );
 
   // antenna
-  antenna = createSpaceObject(
-    carGroup, resources.antenna, 0.1,
-    0, 0, 0,
-    0.25, 0.905, 0
-  );
   nonCameraAnimations.push(
     new Animation(
-      antenna,
+      createSpaceObject(
+        carGroup, resources.antenna, 0.1,
+        0, 0, 0,
+        0.25, 0.905, 0
+      ),
       getYrotationAnimation(0.25, 0.905, 0, 7500, 36, true, 0.1),
       true
     )
   );
 
-  // holocrons
-  holocron = createSpaceObject(
-    carGroup, resources.holocron, 0.04,
-    0, 0, 0,
-    0, -1, 0
-  );
+  // holocron
   nonCameraAnimations.push(
     new Animation(
-      holocron,
+      createSpaceObject(
+        carGroup, resources.holocron, 0.04,
+        0, 0, 0,
+        0, -1, 0
+      ),
       getYrotationAnimation(0, -1, 0, 1500, 36, false, 0.03),
       true
     )
   );
+
+  // for the special effect 'level of detail'
+  carGroup // whole group
+    .children[0] // three children and pick car
+      .children[0] // material node as children and pick it    // todo change if not just material but also something with shader
+        .children[0] // render node as children and pick it
+        = new MultiModelRenderSGNode(resources.car_close, resources.car_medium, resources.car_far, 28, 38);
 
   root.append(carGroup);
   // #endregion
@@ -272,7 +283,7 @@ function render(timeInMilliseconds) {
 
 // #region functions, objects, ... we created
 
-// #region Camera
+// #region helpers
 function animationStart(x, y, z) {  
   return new UserControlledCamera(gl.canvas, vec3.fromValues(x, y, z));
 }
@@ -284,6 +295,32 @@ function BirdsEyeDebug() {
   camera.control.lookingDir.y = -89.99;
 
   return camera
+}
+
+{ // Calculate distance between two nodes
+  const xInMat = 12;
+  const yInMat = 13;
+  const zInMat = 14;
+
+  function getDistance(matrix) {
+    const coords = getCoordsFromMatrix(matrix);
+
+    let applySqareRoot = 0;
+
+    for (let i = 0; i < 3; i++) {
+      applySqareRoot += square(coords[i]);
+    }
+
+    return Math.sqrt(applySqareRoot);
+  }
+
+  function getCoordsFromMatrix(matrix) {  
+    return [matrix[xInMat], matrix[yInMat], matrix[zInMat]];
+  }
+
+  function square(val) {
+    return Math.pow(val, 2);
+  }
 }
 // #endregion
 
@@ -321,6 +358,7 @@ function createLightSphere(resources, x, y, z, radius, r, g, b) {
 }
 
 function getMaterialNode(model) {
+
   return new MaterialSGNode(
     new RenderSGNode(model)
   );
@@ -362,8 +400,7 @@ function createPlanet(parent, x, y, z, radius, duration, splits, isClockwise) {
   return planet;
 }
 
-function createSpaceObject(parent, model, scale, 
-
+function createSpaceObject(parent, model, scale,
   degreesX, degreesY, degreesZ,
   x, y, z,        // starting position when created
   toX, toY, toZ,  // end position after animation
@@ -399,6 +436,74 @@ function createSpaceObject(parent, model, scale,
 
   return spaceship;
 }
+
+class MultiModelRenderSGNode extends SGNode {
+
+  // This class is simply the RenderSGNode but a little bit adapted,for the special effect 'level of detail'.
+  // The only two changes are in the constructor and after the Uniforms got setted.
+
+  constructor(model_close, model_medium, model_far, threshold_close, threshold_medium, children) {
+    super(children);
+
+    this.threshold_close = threshold_close;
+    this.threshold_medium = threshold_medium;
+
+    if (typeof model_close !== 'function') {
+
+      //assume it is a model wrap it
+      this.model_close = modelRenderer(model_close);
+    } else {
+      this.model_close = model_close;
+    }
+
+    if (typeof model_medium !== 'function') {
+
+      //assume it is a model wrap it
+      this.model_medium = modelRenderer(model_medium);
+    } else {
+      this.model_medium = model_medium;
+    }
+
+    if (typeof model_far !== 'function') {
+
+      //assume it is a model wrap it
+      this.model_far = modelRenderer(model_far);
+    } else {
+      this.model_far = model_far;
+    }
+  }
+
+  setTransformationUniforms(context) {
+
+    // set matrix uniforms
+    const modelViewMatrix = mat4.multiply(mat4.create(), context.viewMatrix, context.sceneMatrix);
+    const normalMatrix = mat3.normalFromMat4(mat3.create(), modelViewMatrix);
+    const projectionMatrix = context.projectionMatrix;    
+
+    const gl = context.gl,
+      shader = context.shader;
+    gl.uniformMatrix4fv(gl.getUniformLocation(shader, 'u_modelView'), false, modelViewMatrix);
+    gl.uniformMatrix3fv(gl.getUniformLocation(shader, 'u_normalMatrix'), false, normalMatrix);
+    gl.uniformMatrix4fv(gl.getUniformLocation(shader, 'u_projection'), false, projectionMatrix);
+  
+    let distance = getDistance(modelViewMatrix);
+    if(distance < this.threshold_close) this.renderer = this.model_close;
+    else if(distance < this.threshold_medium) this.renderer = this.model_medium;
+    else this.renderer = this.model_far;
+  }
+
+  render(context) {
+
+    this.setTransformationUniforms(context);
+
+    // call the renderer
+    this.renderer(context);
+
+    // render children
+    super.render(context);
+  }
+}
+
 // #endregion
 
 // #region Animation
