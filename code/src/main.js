@@ -34,6 +34,7 @@ loadResources({
   car_far: './src/models/car/car_far.obj',
   antenna: './src/models/antenna/antenna.obj',
   holocron: './src/models/holocron/holocron.obj',
+  flashlight: './src/models/flashlight/flashlight.obj'
 
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   
@@ -105,7 +106,10 @@ function createSceneGraph(gl, resources) {
 
   // EDIT: adding nodes
   // #region sun
-  root.append(createLightSphere(resources, -25, 0, 120, 35));
+  createLightSource(
+    resources, root, makeSphere(35, prec, prec),
+    -25, 0, 120
+  );
   // #endregion
   
   // #region planet with one moon
@@ -194,6 +198,12 @@ function createSceneGraph(gl, resources) {
     0, 0, 0,
     0, -2, 0,
   );
+  // for the special effect 'level of detail'
+  carGroup // whole group
+    .children[0] // three children and pick car
+      .children[0] // material node as children and pick it    // todo change if not just material but also something with shader
+        .children[0] // render node as children and pick it
+        = new MultiModelRenderSGNode(resources.car_close, resources.car_medium, resources.car_far, 26, 38);
 
   // antenna
   nonCameraAnimations.push(
@@ -207,8 +217,6 @@ function createSceneGraph(gl, resources) {
       true
     )
   );
-
-  // holocron
   nonCameraAnimations.push(
     new Animation(
       createSpaceObject(
@@ -216,17 +224,26 @@ function createSceneGraph(gl, resources) {
         0, 0, 0,
         0, -1, 0
       ),
-      getYrotationAnimation(0, -1, 0, 1500, 36, false, 0.03),
+      getYrotationAnimation(0, -1, -0.25, 1500, 36, false, 0.03),
+      // [
+      //   getAnimationMatrix(0, -1, -10, 0, 0, -5, 6000, 0.04),
+      //   getAnimationMatrix(0, -1, -0.25, 0, 0, -5, 3000, 0.04)
+      // ],
       true
     )
   );
 
-  // for the special effect 'level of detail'
-  carGroup // whole group
-    .children[0] // three children and pick car
-      .children[0] // material node as children and pick it    // todo change if not just material but also something with shader
-        .children[0] // render node as children and pick it
-        = new MultiModelRenderSGNode(resources.car_close, resources.car_medium, resources.car_far, 26, 38);
+  // flashlight
+  let flashlight = createSpaceObject(
+    carGroup, resources.flashlight, 0.5,
+    0, -65, -25,
+    -3, 2, -5
+  )
+  createLightSource(resources,
+    flashlight,
+    makeSphere(0.17, prec, prec),
+    0.9, 0, 0,
+  )
 
   root.append(carGroup);
   // #endregion
@@ -327,7 +344,10 @@ function BirdsEyeDebug() {
 // #region Creation
 const prec = 80; // how many latitude and longitude lines should a sphere have
 
-function createLightSphere(resources, x, y, z, radius, r, g, b) {
+function createLightSource(resources, parent, model,
+  x, y, z,
+  degreesX = 0, degreesY = 0, degreesZ = 0,
+  scale = 1) {
 
   // https://learnopengl.com/Lighting/Basic-Lighting
   // Ambient lighting: even when it is dark there is usually still some light somewhere in the world (the moon, a distant light) so objects are almost never completely dark. To simulate this we use an ambient lighting constant that always gives the object some color.
@@ -337,22 +357,29 @@ function createLightSphere(resources, x, y, z, radius, r, g, b) {
   // create white light node
   let light = new LightSGNode();
   light.ambient = [0.6, 0.6, 0.6, 1];
-  if (arguments.length > 5) {
-    light.diffuse = [r, g, b, 1];
-  } else {
-    light.diffuse = [1, 1, 1, 1];
-  }
+  light.diffuse = [1, 1, 1, 1];
   light.specular = [1, 1, 1, 1];
   light.position = [x, y, z];
 
   light.append(
     new ShaderSGNode(
       createProgram(gl, resources.vs_single, resources.fs_single),
-      new RenderSGNode(
-        makeSphere(radius, prec, prec)
+      new TransformationSGNode(
+        glm.transform(
+          {
+            translate: [0, 0, 0],
+            rotateX: degreesX,
+            rotateY: degreesY,
+            rotateZ: degreesZ,
+            scale: scale
+          }
+        ),
+        new RenderSGNode(model)
       )
     )
   );
+
+  parent.append(light)
 
   return light;
 }
@@ -409,9 +436,9 @@ function createSpaceObject(parent, model, scale,
   let spaceshipMaterial = getMaterialNode(model);
   
   // make reflect light from sun
-  spaceshipMaterial.ambient = [0.2, 0.2, 0.2, 1]; // changes (the color of) both sides
-  spaceshipMaterial.diffuse = [0.9, 0.9, 0.9, 1]; // changes (the color of) the lighted side 
-  spaceshipMaterial.specular = [0.0, 0.0, 0.0, 1];   // so that there is no small light circle on the dark side of the spaceship
+  spaceshipMaterial.ambient = [0.2, 0.2, 0.2, 1];   // changes (the color of) both sides
+  spaceshipMaterial.diffuse = [0.9, 0.9, 0.9, 1];   // changes (the color of) the lighted side 
+  spaceshipMaterial.specular = [0.0, 0.0, 0.0, 1];  // so that there is no small light circle on the dark side of the spaceship
   spaceshipMaterial.shininess = 3;
 
   let spaceship = new TransformationSGNode(
@@ -544,24 +571,6 @@ function addNonLoopingAnimation(node, x, y, z, degreesX, degreesY, degreesZ, dur
   )
 }
 
-// Returns an array with many small rotation-animations-matrices.
-// Used for space-objects rotation around their Z-axis.
-function getZrotationAnimation(x, y, z, degreesX, degreesY, degreesZ, duration, splits, scale = 1) {
-
-  let durationPerSplit = duration / splits;
-
-  let animations = [];
-
-  for (i = 0; i < splits; i++) {
-
-    animations.push(
-      getAnimationMatrix(x, y, z, degreesX, degreesY, (degreesZ / splits * (i+1)), durationPerSplit, scale)
-    );
-  }
-
-  return animations;
-}
-
 // Returns an array with many small Y-rotation-animations-matrices.
 // Used for moons orbiting planets and space-objects rotation around their Y-axis.
 function getYrotationAnimation(x, y, z, duration, splits, isClockwise = false, scale = 1) {
@@ -576,6 +585,24 @@ function getYrotationAnimation(x, y, z, duration, splits, isClockwise = false, s
 
     animations.push(
       getAnimationMatrix(x, y, z, 0, (negate * 360 / splits * (i+1)), 0, durationPerSplit, scale)
+    );
+  }
+
+  return animations;
+}
+
+// Returns an array with many small rotation-animations-matrices.
+// Used for space-objects rotation around their Z-axis.
+function getZrotationAnimation(x, y, z, degreesX, degreesY, degreesZ, duration, splits, scale = 1) {
+
+  let durationPerSplit = duration / splits;
+
+  let animations = [];
+
+  for (i = 0; i < splits; i++) {
+
+    animations.push(
+      getAnimationMatrix(x, y, z, degreesX, degreesY, (degreesZ / splits * (i+1)), durationPerSplit, scale)
     );
   }
 
