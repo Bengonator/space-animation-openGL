@@ -107,7 +107,7 @@ function createSceneGraph(gl, resources) {
   // EDIT: adding nodes
   // #region sun
   createLightSource(
-    resources, root, makeSphere(35, prec, prec),
+    resources, root, 35,
     -25, 0, 120
   );
   // #endregion
@@ -239,9 +239,7 @@ function createSceneGraph(gl, resources) {
     0, -65, -25,
     -3, 2, -5
   )
-  createLightSource(resources,
-    flashlight,
-    makeSphere(0.17, prec, prec),
+  createLightSource(resources, flashlight, 0.17,
     0.9, 0, 0,
   )
 
@@ -344,10 +342,7 @@ function BirdsEyeDebug() {
 // #region Creation
 const prec = 80; // how many latitude and longitude lines should a sphere have
 
-function createLightSource(resources, parent, model,
-  x, y, z,
-  degreesX = 0, degreesY = 0, degreesZ = 0,
-  scale = 1) {
+function createLightSource(resources, parent, size, x, y, z,) {
 
   // https://learnopengl.com/Lighting/Basic-Lighting
   // Ambient lighting: even when it is dark there is usually still some light somewhere in the world (the moon, a distant light) so objects are almost never completely dark. To simulate this we use an ambient lighting constant that always gives the object some color.
@@ -364,18 +359,7 @@ function createLightSource(resources, parent, model,
   light.append(
     new ShaderSGNode(
       createProgram(gl, resources.vs_single, resources.fs_single),
-      new TransformationSGNode(
-        glm.transform(
-          {
-            translate: [0, 0, 0],
-            rotateX: degreesX,
-            rotateY: degreesY,
-            rotateZ: degreesZ,
-            scale: scale
-          }
-        ),
-        new RenderSGNode(model)
-      )
+      new RenderSGNode(makeSphere(size, prec, prec))
     )
   );
 
