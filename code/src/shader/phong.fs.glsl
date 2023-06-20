@@ -36,7 +36,7 @@ struct SpotLight{
 
 uniform Material u_material;
 uniform Light u_light;
-// uniform Light u_light2; // (already) added second light-source
+uniform Light u_light2; // added second light-source
 uniform SpotLight u_spotLight; // added spotlight
 
 
@@ -44,7 +44,7 @@ uniform SpotLight u_spotLight; // added spotlight
 varying vec3 v_normalVec;
 varying vec3 v_eyeVec;
 varying vec3 v_lightVec;
-// varying vec3 v_light2Vec; // (already) added second light-source
+varying vec3 v_light2Vec; // added second light-source
 varying vec3 v_spotLightVec; // added spotlight
 
 
@@ -108,6 +108,6 @@ void main() {
 
 	gl_FragColor =
 		calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec)
-		//+ calculateSimplePointLight(u_light2, u_material, v_light2Vec, v_normalVec, v_eyeVec); // (already) added second light-source
+		+ calculateSimplePointLight(u_light2, u_material, v_light2Vec, v_normalVec, v_eyeVec) // added second light-source
 		+ calculateSpotLight(u_spotLight, u_material, v_spotLightVec, v_normalVec, v_eyeVec); // added spotlight
 }

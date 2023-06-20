@@ -358,11 +358,19 @@ function createLightSource(
 
   // create white light node
   let light = new LightSGNode();
-  light.ambient = [0.3, 0.3, 0.3, 1];
-  light.diffuse = [0.5, 0.5, 0.5, 1];
-  light.specular = [1, 1, 1, 1];
+  
   light.position = [x, y, z];
-  if (!isSun) light.uniform = "u_light2";
+
+  if (isSun) {
+    light.ambient = [0.3, 0.3, 0.3, 1];
+    light.diffuse = [0.5, 0.5, 0.5, 1];
+    light.specular = [1, 1, 1, 1];
+  } else {
+    light.uniform = "u_light2";
+    light.ambient = [0, 0, 0, 1];
+    light.diffuse = [0.2, 0.2, 0.2, 1];
+    light.specular = [1, 1, 1, 1];
+  }
 
   light.append(
     new ShaderSGNode(
