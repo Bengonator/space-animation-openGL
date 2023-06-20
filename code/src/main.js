@@ -5,6 +5,20 @@ var program = null;
 
 let shaders = {};
 
+// // textures
+// var renderTargetColorTexture;
+// var renderTargetDepthTexture;
+// let moonTexture;
+// let marsTexture;
+// let venusTexture;
+// let starsTexture;
+// let oxidTexture;
+
+// // framebuffers variables
+// var renderTargetFramebuffer;
+// var framebufferWidth = 512;
+// var framebufferHeight = 512;
+
 // Camera
 var camera = null;
 var cameraPos = vec3.create();
@@ -36,7 +50,14 @@ loadResources({
   car_far: './src/models/car/car_far.obj',
   antenna: './src/models/antenna/antenna.obj',
   holocron: './src/models/holocron/holocron.obj',
-  flashlight: './src/models/flashlight/flashlight.obj'
+  flashlight: './src/models/flashlight/flashlight.obj',
+
+  //loading textures
+  // moontexture: './src/models/textures/moon.jpg',
+  // marstexture: './src/models/textures/mars.jpg',
+  // venustexture: './src/models/textures/venus.jpg',
+  // starstexture: './src/models/textures/stars.png',
+  // oxidesteeltexture: './src/models/textures/oxide-steel-texture.jpg'
 
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   
@@ -52,6 +73,10 @@ function init(resources) {
 
   // create a GL context
   gl = createContext();
+
+  // // init textures
+  // initTextures(resources);
+  // initRenderToTexture();
 
   // setup camera at end position of camera-animation
   const x = 2;
@@ -261,6 +286,9 @@ function render(timeInMilliseconds) {
   // check for resize of browser window and adjust canvas sizes
   checkForWindowResize(gl);
 
+  // // render different scene to texture
+  // renderToTexture(timeInMilliseconds);
+
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.clearColor(0.05, 0.03, 0.10, 1);
 
@@ -301,6 +329,105 @@ function render(timeInMilliseconds) {
 }
 
 // #region functions, objects, ... we created
+
+// function initTextures(resources)
+// {
+//   //create texture object
+//   marsTexture = gl.createTexture();
+//   //select a texture unit
+//   gl.activeTexture(gl.TEXTURE0);
+//   //bind texture to active texture unit
+//   gl.bindTexture(gl.TEXTURE_2D, marsTexture);
+//   //set sampling parameters
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+ 
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  
+//   //upload texture data
+//   gl.texImage2D(gl.TEXTURE_2D, //texture unit target == texture type
+//     0, //level of detail level (default 0)
+//     gl.RGBA, //internal format of the data in memory
+//     gl.RGBA, //image format (should match internal format)
+//     gl.UNSIGNED_BYTE, //image data type
+//     resources.marstexture); //actual image data
+//   //clean up/unbind texture
+//   gl.bindTexture(gl.TEXTURE_2D, null);
+// }
+
+// function initRenderToTexture() {
+//   //general setup
+//   gl.activeTexture(gl.TEXTURE0);
+
+//   //create framebuffer
+//   renderTargetFramebuffer = gl.createFramebuffer();
+//   gl.bindFramebuffer(gl.FRAMEBUFFER, renderTargetFramebuffer);
+
+//   //create color texture
+//   renderTargetColorTexture = gl.createTexture();
+//   gl.bindTexture(gl.TEXTURE_2D, renderTargetColorTexture);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+//   gl.texImage2D(gl.TEXTURE_2D, //texture unit target == texture type
+//     0, //level of detail level (default 0)
+//     gl.RGBA, //internal format of the data in memory
+//     framebufferWidth, //texture width (required if no image given)
+//     framebufferHeight, //texture height (required if no image given)
+//     0, //border (enable or disable setting a border color for clamping, required if no image given)
+//     gl.RGBA, //image format (should match internal format)
+//     gl.UNSIGNED_BYTE, //image data type
+//     null); //actual image data
+
+//   //create depth texture
+//   renderTargetDepthTexture = gl.createTexture();
+//   gl.bindTexture(gl.TEXTURE_2D, renderTargetDepthTexture);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+//   gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT32F, framebufferWidth, framebufferHeight, 0, gl.DEPTH_COMPONENT, gl.FLOAT, null);
+
+//   //attach textures to framebuffer
+//   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, renderTargetColorTexture, 0);
+//   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, renderTargetDepthTexture, 0);
+
+//   //check if framebuffer was created successfully
+//   if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!=gl.FRAMEBUFFER_COMPLETE)
+//     {alert('Framebuffer incomplete!');}
+
+//   //clean up
+//   gl.bindTexture(gl.TEXTURE_2D, null);
+//   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+// }
+
+// function renderToTexture(timeInMilliseconds)
+// {
+//   //TASK 5: Render C3PO to framebuffer/texture
+//   //bind framebuffer to draw scene into texture
+//   gl.bindFramebuffer(gl.FRAMEBUFFER, renderTargetFramebuffer);
+
+//   //setup viewport
+//   gl.viewport(0, 0, framebufferWidth, framebufferHeight);
+//   gl.clearColor(0.9, 0.9, 0.9, 1.0);
+//   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+//   //setup context and camera matrices
+//   const context = createSGContext(gl);
+//   context.projectionMatrix = mat4.perspective(mat4.create(), glm.deg2rad(30), framebufferWidth / framebufferHeight, 0.01, 100);
+//   context.viewMatrix = mat4.lookAt(mat4.create(), [0,1,-10], [0,0,0], [0,1,0]);
+
+//   //EXTRA TASK: animate texture coordinates
+//   context.timeInMilliseconds = timeInMilliseconds;
+
+//   //render scenegraph
+//   root.render(context);
+
+//   //disable framebuffer (to render to screen again)
+//   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+// }
 
 // #region helpers
 function animationStart(x, y, z) {  
@@ -577,6 +704,52 @@ class SpotLightSGNode extends LightSGNode {
 		vec3.transformMat3(this._worldDirection, this.direction, nMat);
 	}
 }
+
+// class TextureSGNode extends SGNode {
+// 	constructor(image, children) {
+// 		super(children);
+
+// 		this.image = image;
+//     this.uniform = 'u_tex';
+// 		// deliberately cause errors on malfunction
+// 		this.textureId = -1;
+// 	}
+
+// 	init(gl) {
+// 		this.textureId = gl.createTexture();
+// 		gl.bindTexture(gl.TEXTURE_2D, this.textureId);
+
+// 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.magFilter || gl.LINEAR);
+// 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.minFilter || gl.LINEAR);
+
+// 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.wrapS || gl.REPEAT);
+// 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.wrapT || gl.REPEAT);
+
+// 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.image);
+
+// 		gl.bindTexture(gl.TEXTURE_2D, null);
+// 	}
+
+// 	render(context) {
+// 		if (this.textureId < 0) {
+// 			this.init(context.gl);
+// 		}
+
+// 		//set additional shader parameters
+// 		gl.uniform1i(gl.getUniformLocation(context.shader, this.uniform), this.texunit);
+
+// 		//activate and bind texture
+//     gl.activeTexture(gl.TEXTURE0 + this.textureunit);
+//     gl.bindTexture(gl.TEXTURE_2D, this.textureId);
+
+//     //render children
+//     super.render(context);
+
+//     //clean up
+//     gl.activeTexture(gl.TEXTURE0 + this.textureunit);
+//     gl.bindTexture(gl.TEXTURE_2D, null);
+// 	}
+// }
 
 class MultiModelRenderSGNode extends SGNode {
 
