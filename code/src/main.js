@@ -3,6 +3,8 @@
 var gl = null;
 var program = null;
 
+let shaders = {};
+
 // Camera
 var camera = null;
 var cameraPos = vec3.create();
@@ -71,38 +73,43 @@ function init(resources) {
   cameraAnimation = new Animation(
     camera, 
     [
-      // initiation
-      getAnimationMatrix(5, 0, -3, 0, 0, 0, 1),    // just to make sure, that the animation starts at the position we want
-      getAnimationMatrix(5, 0, -3, 0, 0, 0, 1000), // short delay at start, does not count towards the 30 seconds
+      // // initiation
+      // getAnimationMatrix(5, 0, -3, 0, 0, 0, 1),    // just to make sure, that the animation starts at the position we want
+      // getAnimationMatrix(5, 0, -3, 0, 0, 0, 1000), // short delay at start, does not count towards the 30 seconds
 
-      // move to the right of first planet, rotate left
-      getAnimationMatrix(0, 0, 14, 0, 0, 0, 4500),
-      getAnimationMatrix(1, 0, 18, 0, 5, 0, 2000),
-      getAnimationMatrix(2, 0, 22, 0, 10, 0, 2000),
+      // // move to the right of first planet, rotate left
+      // getAnimationMatrix(0, 0, 14, 0, 0, 0, 4500),
+      // getAnimationMatrix(1, 0, 18, 0, 5, 0, 2000),
+      // getAnimationMatrix(2, 0, 22, 0, 10, 0, 2000),
 
-      // move in front of second planet
-      getAnimationMatrix(4, 0, 26, 7, 11, 0, 3900),   // rotate down to see cargo ship
-      getAnimationMatrix(8, 0, 33, -10, 12, 0, 3800), // rotate up to see the planet
+      // // move in front of second planet
+      // getAnimationMatrix(4, 0, 26, 7, 11, 0, 3900),   // rotate down to see cargo ship
+      // getAnimationMatrix(8, 0, 33, -10, 12, 0, 3800), // rotate up to see the planet
 
-      // quickly move and rotate to the right (because scared of fighters racing past)
-      getAnimationMatrix(4, 5, 30, -14, -14, -8, 1000),
+      // // quickly move and rotate to the right (because scared of fighters racing past)
+      // getAnimationMatrix(4, 5, 30, -14, -14, -8, 1000),
       
-      // move to the left of the car, rotate right
-      getAnimationMatrix(4, 3, 30, 6, -30, 0, 3500),  // look at car
+      // // move to the left of the car, rotate right
+      // getAnimationMatrix(4, 3, 30, 6, -30, 0, 3500),  // look at car
       getAnimationMatrix(x, y, z, yd, xd, 0, 8000),   // look further right and move to backdoors
     ], 
     false
   );
 
   if (!DEBUG) cameraAnimation.start()
-
+  
+  loadShaders(gl, resources);
   root = createSceneGraph(gl, resources);
+}
+
+function loadShaders(gl, resources){
+  shaders.phong = createProgram(gl, resources.vs, resources.fs);
 }
 
 function createSceneGraph(gl, resources) {
 
   // create scenegraph
-  const root = new ShaderSGNode(createProgram(gl, resources.vs, resources.fs))
+  const root = new ShaderSGNode(shaders.phong);
 
   // EDIT: adding nodes
   // #region sun
@@ -342,7 +349,7 @@ function BirdsEyeDebug() {
 // #region Creation
 const prec = 80; // how many latitude and longitude lines should a sphere have
 
-function createLightSource(resources, parent, size, x, y, z,) {
+function createLightSource(resources, parent, size, x, y, z) {
 
   // https://learnopengl.com/Lighting/Basic-Lighting
   // Ambient lighting: even when it is dark there is usually still some light somewhere in the world (the moon, a distant light) so objects are almost never completely dark. To simulate this we use an ambient lighting constant that always gives the object some color.
@@ -355,6 +362,35 @@ function createLightSource(resources, parent, size, x, y, z,) {
   light.diffuse = [1, 1, 1, 1];
   light.specular = [1, 1, 1, 1];
   light.position = [x, y, z];
+
+  light.append(
+    new ShaderSGNode(
+      createProgram(gl, resources.vs_single, resources.fs_single),
+      new RenderSGNode(makeSphere(size, prec, prec))
+    )
+  );
+
+  parent.append(light)
+
+  return light;
+}
+
+// unused
+function createSpotLightSource(resources, parent, size, x, y, z) {
+
+  // https://learnopengl.com/Lighting/Basic-Lighting
+  // Ambient lighting: even when it is dark there is usually still some light somewhere in the world (the moon, a distant light) so objects are almost never completely dark. To simulate this we use an ambient lighting constant that always gives the object some color.
+  // Diffuse lighting: simulates the directional impact a light object has on an object. This is the most visually significant component of the lighting model. The more a part of an object faces the light source, the brighter it becomes.
+  // Specular lighting: simulates the bright spot of a light that appears on shiny objects. Specular highlights are more inclined to the color of the light than the color of the object
+
+  // create white light node
+  let light = new SpotLightSGNode();
+  light.ambient = [1, 1, 1, 1];
+  light.diffuse = [0, 0, 0, 1];
+  light.specular = [1, 1, 1, 1];
+  light.position = [x, y, z];
+  light.direction = [0, -1, 0];
+  light.uniform = "u_spotLight";
 
   light.append(
     new ShaderSGNode(
@@ -446,6 +482,55 @@ function createSpaceObject(parent, model, scale,
   }
 
   return spaceship;
+}
+
+class SpotLightSGNode extends LightSGNode {
+
+	constructor(children) {
+		super(null, children);
+
+		this.angle = Math.PI / 8;
+		this.direction = vec3.normalize(vec3.create(), vec3.fromValues(1, -0.5, 0));
+		this._worldDirection = [0, 0, 0];
+
+		this.position = [0, 0, 0];
+		this.ambient = [0.0, 0.0, 0.0, 1];
+		this.diffuse = rgb(0, 0, 0);
+		this.specular = rgb(0, 0, 0);
+		this.uniform = "u_spotLight"; // uniform name
+	}
+
+	setLightUniforms(context) {
+    const gl = context.gl;
+    
+		// exit if shader is not available
+		if (!(context.shader && isValidUniformLocation(gl.getUniformLocation(context.shader, this.uniform + 'Pos')))) {
+      return;
+    }
+    gl.uniform1f(gl.getUniformLocation(context.shader, this.uniform + '.angle'), this.angle);
+    gl.uniform3fv(gl.getUniformLocation(context.shader, this.uniform + '.direction'), this._worldDirection);
+    super.setLightUniforms(context)
+  }
+    
+	setLightPosition(context) {
+    const gl = context.gl;
+
+		// exit if shader is not available
+		if (!(context.shader && isValidUniformLocation(gl.getUniformLocation(context.shader, this.uniform + 'Pos')))) {
+      return;
+    }
+    const position = this._worldPosition || this.position;
+    gl.uniform3f(gl.getUniformLocation(context.shader, this.uniform + 'Pos'), position[0], position[1], position[2]);
+	}
+
+	computeLightPosition(context) {
+		// transform with the current model view matrix
+		const modelViewMatrix = mat4.multiply(mat4.create(), context.viewMatrix, context.sceneMatrix);
+		const original = this.position;
+		let nMat = mat3.normalFromMat4(mat3.create(), modelViewMatrix);
+		this._worldPosition = vec4.transformMat4(vec4.create(), vec4.fromValues(original[0], original[1], original[2], 1), modelViewMatrix);
+		vec3.transformMat3(this._worldDirection, this.direction, nMat);
+	}
 }
 
 class MultiModelRenderSGNode extends SGNode {
