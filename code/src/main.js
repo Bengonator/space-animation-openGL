@@ -132,8 +132,8 @@ function createSceneGraph(gl, resources) {
   // #region planet with three moons
   p2 = createPlanet(root, 15, 4.7, 50, 2, 13000, 36, true);  
   createMoon(p2, 3, -1, 0, 0.2);
-  createMoon(p2, -2, -1, 3, 0.25);
-  createLightSource(resources, p2, -0.3, 2.5, 0.25, 2, false); // added second moving lightsource
+  createMoon(p2, -3.3, 0.5, 0.25, 0.25);
+  createLightSource(resources, p2, 0.3, -1, 0.6, 2.5, false); // added second moving lightsource
   // #endregion
   
   // #region a fighter-spaceship triplet, which scares the pilot
