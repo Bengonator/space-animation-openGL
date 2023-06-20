@@ -753,7 +753,7 @@ class SpotLightSGNode extends LightSGNode {
 
 class MultiModelRenderSGNode extends SGNode {
 
-  // This class is simply the RenderSGNode but a little bit adapted,for the special effect 'level of detail'.
+  // This class is simply the RenderSGNode but a little bit adapted, for the special effect 'level of detail'.
   // The only two changes are in the constructor and after the Uniforms got setted.
 
   constructor(model_close, model_medium, model_far, threshold_close, threshold_medium, children) {

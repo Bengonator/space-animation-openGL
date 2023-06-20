@@ -54,7 +54,7 @@ varying vec3 v_light2Vec; // added second light-source
 varying vec3 v_spotLightVec; // added spotlight
 
 
-vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec/*, vec4 textureColor*/) {
+vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec /*, vec4 textureColor*/) {
 	// You can find all built-in functions (min, max, clamp, reflect, normalize, etc.) 
 	// and variables (gl_FragCoord, gl_Position) in the OpenGL Shading Language Specification: 
 	// https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.html#built-in-functions
@@ -83,7 +83,7 @@ vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, ve
 	return c_amb + c_diff + c_spec + c_em;
 }
 
-vec4 calculateSpotLight(SpotLight light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec/*, vec4 textureColor*/) {
+vec4 calculateSpotLight(SpotLight light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec /*, vec4 textureColor*/) {
 	lightVec = normalize(lightVec);
 	normalVec = normalize(normalVec);
 	eyeVec = normalize(eyeVec);
@@ -121,7 +121,7 @@ vec4 calculateSpotLight(SpotLight light, Material material, vec3 lightVec, vec3 
 void main() {
 
 	gl_FragColor =
-		calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec/*, textureColor*/) // added textureColor
-		+ calculateSimplePointLight(u_light2, u_material, v_light2Vec, v_normalVec, v_eyeVec/*, textureColor*/) // added second light-source and textureColor
-		+ calculateSpotLight(u_spotLight, u_material, v_spotLightVec, v_normalVec, v_eyeVec/*, textureColor*/); // added spotlight and textureColor
+		calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec /*, textureColor*/) // added textureColor
+		+ calculateSimplePointLight(u_light2, u_material, v_light2Vec, v_normalVec, v_eyeVec /*, textureColor*/) // added second light-source and textureColor
+		+ calculateSpotLight(u_spotLight, u_material, v_spotLightVec, v_normalVec, v_eyeVec /*, textureColor*/); // added spotlight and textureColor
 }
