@@ -252,6 +252,7 @@ function createSceneGraph(gl, resources) {
   )
   createLightSource(resources, flashlight, 0.17,
     0.9, 0, 0,
+    false
   )
 
   root.append(carGroup);
@@ -353,7 +354,10 @@ function BirdsEyeDebug() {
 // #region Creation
 const prec = 80; // how many latitude and longitude lines should a sphere have
 
-function createLightSource(resources, parent, size, x, y, z) {
+function createLightSource(
+  resources, parent, size,
+  x, y, z,
+  isSun = true) {
 
   // https://learnopengl.com/Lighting/Basic-Lighting
   // Ambient lighting: even when it is dark there is usually still some light somewhere in the world (the moon, a distant light) so objects are almost never completely dark. To simulate this we use an ambient lighting constant that always gives the object some color.
@@ -366,6 +370,7 @@ function createLightSource(resources, parent, size, x, y, z) {
   light.diffuse = [1, 1, 1, 1];
   light.specular = [1, 1, 1, 1];
   light.position = [x, y, z];
+  if (!isSun) light.uniform = "u_light2";
 
   light.append(
     new ShaderSGNode(
