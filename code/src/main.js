@@ -73,24 +73,24 @@ function init(resources) {
   cameraAnimation = new Animation(
     camera, 
     [
-      // // initiation
-      // getAnimationMatrix(5, 0, -3, 0, 0, 0, 1),    // just to make sure, that the animation starts at the position we want
-      // getAnimationMatrix(5, 0, -3, 0, 0, 0, 1000), // short delay at start, does not count towards the 30 seconds
+      // initiation
+      getAnimationMatrix(5, 0, -3, 0, 0, 0, 1),    // just to make sure, that the animation starts at the position we want
+      getAnimationMatrix(5, 0, -3, 0, 0, 0, 1000), // short delay at start, does not count towards the 30 seconds
 
-      // // move to the right of first planet, rotate left
-      // getAnimationMatrix(0, 0, 14, 0, 0, 0, 4500),
-      // getAnimationMatrix(1, 0, 18, 0, 5, 0, 2000),
-      // getAnimationMatrix(2, 0, 22, 0, 10, 0, 2000),
+      // move to the right of first planet, rotate left
+      getAnimationMatrix(0, 0, 14, 0, 0, 0, 4500),
+      getAnimationMatrix(1, 0, 18, 0, 5, 0, 2000),
+      getAnimationMatrix(2, 0, 22, 0, 10, 0, 2000),
 
-      // // move in front of second planet
-      // getAnimationMatrix(4, 0, 26, 7, 11, 0, 3900),   // rotate down to see cargo ship
-      // getAnimationMatrix(8, 0, 33, -10, 12, 0, 3800), // rotate up to see the planet
+      // move in front of second planet
+      getAnimationMatrix(4, 0, 26, 7, 11, 0, 3900),   // rotate down to see cargo ship
+      getAnimationMatrix(8, 0, 33, -10, 12, 0, 3800), // rotate up to see the planet
 
-      // // quickly move and rotate to the right (because scared of fighters racing past)
-      // getAnimationMatrix(4, 5, 30, -14, -14, -8, 1000),
+      // quickly move and rotate to the right (because scared of fighters racing past)
+      getAnimationMatrix(4, 5, 30, -14, -14, -8, 1000),
       
-      // // move to the left of the car, rotate right
-      // getAnimationMatrix(4, 3, 30, 6, -30, 0, 3500),  // look at car
+      // move to the left of the car, rotate right
+      getAnimationMatrix(4, 3, 30, 6, -30, 0, 3500),  // look at car
       getAnimationMatrix(x, y, z, yd, xd, 0, 8000),   // look further right and move to backdoors
     ], 
     false
@@ -98,18 +98,13 @@ function init(resources) {
 
   if (!DEBUG) cameraAnimation.start()
   
-  loadShaders(gl, resources);
   root = createSceneGraph(gl, resources);
-}
-
-function loadShaders(gl, resources){
-  shaders.phong = createProgram(gl, resources.vs, resources.fs);
 }
 
 function createSceneGraph(gl, resources) {
 
   // create scenegraph
-  const root = new ShaderSGNode(shaders.phong);
+  const root = new ShaderSGNode(createProgram(gl, resources.vs, resources.fs));
 
   // EDIT: adding nodes
   // #region sun
@@ -209,7 +204,7 @@ function createSceneGraph(gl, resources) {
   // for the special effect 'level of detail'
   carGroup // whole group
     .children[0] // three children and pick car
-      .children[0] // material node as children and pick it    // todo change if not just material but also something with shader
+      .children[0] // material node as children and pick it
         .children[0] // render node as children and pick it
         = new MultiModelRenderSGNode(resources.car_close, resources.car_medium, resources.car_far, 26, 38);
 
@@ -247,13 +242,10 @@ function createSceneGraph(gl, resources) {
   let flashlight = createSpaceObject(
     carGroup, resources.flashlight, 0.5,
     0, -65, -25,
-    -3, 2, -5,
+    -1, 1.25, -5,
     false
   )
-  createLightSource(resources, flashlight, 0.17,
-    0.9, 0, 0,
-    false
-  )
+  createSpotLightSource(resources, flashlight, 0.17, 0.9, 0, 0)
 
   root.append(carGroup);
   // #endregion
@@ -366,8 +358,8 @@ function createLightSource(
 
   // create white light node
   let light = new LightSGNode();
-  light.ambient = [0.6, 0.6, 0.6, 1];
-  light.diffuse = [1, 1, 1, 1];
+  light.ambient = [0.3, 0.3, 0.3, 1];
+  light.diffuse = [0.5, 0.5, 0.5, 1];
   light.specular = [1, 1, 1, 1];
   light.position = [x, y, z];
   if (!isSun) light.uniform = "u_light2";
@@ -384,7 +376,6 @@ function createLightSource(
   return light;
 }
 
-// unused
 function createSpotLightSource(resources, parent, size, x, y, z) {
 
   // https://learnopengl.com/Lighting/Basic-Lighting
@@ -394,12 +385,8 @@ function createSpotLightSource(resources, parent, size, x, y, z) {
 
   // create white light node
   let light = new SpotLightSGNode();
-  light.ambient = [1, 1, 1, 1];
-  light.diffuse = [0, 0, 0, 1];
-  light.specular = [1, 1, 1, 1];
   light.position = [x, y, z];
-  light.direction = [0, -1, 0];
-  light.uniform = "u_spotLight";
+  light.direction = [1, 1, 1];
 
   light.append(
     new ShaderSGNode(
@@ -426,7 +413,7 @@ function getSmoothMaterial(model) {
   // golden colour and shiny
   material.ambient = [0.25, 0.2, 0.07, 1];
   material.diffuse = [0.25, 0.2, 0.07, 1];
-  material.specular = [1, 1, 1, 1];
+  material.specular = [0.8, 0.8, 0.8, 1];
   material.shininess = 1;
 
   return material
@@ -539,14 +526,14 @@ class SpotLightSGNode extends LightSGNode {
 	constructor(children) {
 		super(null, children);
 
-		this.angle = Math.PI / 8;
-		this.direction = vec3.normalize(vec3.create(), vec3.fromValues(1, -0.5, 0));
-		this._worldDirection = [0, 0, 0];
+		this.angle = Math.PI / 4; // "radius"
+		this.direction = vec3.normalize(vec3.create(), vec3.fromValues(1, -0.5, 0));  // default but will be overwritten
+		this._worldDirection = [0, 0, 0]; // error 'out is undefined' when missing
 
-		this.position = [0, 0, 0];
-		this.ambient = [0.0, 0.0, 0.0, 1];
-		this.diffuse = rgb(0, 0, 0);
-		this.specular = rgb(0, 0, 0);
+		this.position = [0, 0, 0]; // default but will be overwritten
+		this.ambient = [0, 0, 0, 1]; // if not in spotlight --> no light
+		this.diffuse = [1, 1, 1, 1]; // if in spotlight --> full light
+		this.specular = [0, 0, 0, 1];
 		this.uniform = "u_spotLight"; // uniform name
 	}
 
