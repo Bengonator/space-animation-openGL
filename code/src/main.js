@@ -125,7 +125,7 @@ function createSceneGraph(gl, resources) {
   // #endregion
   
   // #region cargo spaceship
-  createSpaceObject(
+  createMovingSpaceObject(
     root, resources.cargo_spaceship, 0.3,
     20, -30, 0,     // angles
     100, -10, -50,  // from
@@ -142,7 +142,7 @@ function createSceneGraph(gl, resources) {
   // #endregion
   
   // #region a fighter-spaceship triplet, which scares the pilot
-  createSpaceObject( // left
+  createMovingSpaceObject( // left
     root, resources.fighter_spaceship, 0.001,
     100, 220, 200,
     142, -199.5, -99.5,
@@ -150,7 +150,7 @@ function createSceneGraph(gl, resources) {
     -122, 210.5, 186.5,
     35000
   );
-  createSpaceObject( // middle
+  createMovingSpaceObject( // middle
     root, resources.fighter_spaceship, 0.001, 
     100, 220, 200,
     140, -200, -100,
@@ -158,7 +158,7 @@ function createSceneGraph(gl, resources) {
     -124, 210, 186,
     35000
   );
-  createSpaceObject( // right
+  createMovingSpaceObject( // right
     root, resources.fighter_spaceship, 0.001,
     100, 220, 200,
     139.1, -202, -100.5,
@@ -204,6 +204,7 @@ function createSceneGraph(gl, resources) {
     carGroup, resources.car_far, 0.03,
     0, 0, 0,
     0, -2, 0,
+    false
   );
   // for the special effect 'level of detail'
   carGroup // whole group
@@ -224,6 +225,8 @@ function createSceneGraph(gl, resources) {
       true
     )
   );
+
+  // holocron
   nonCameraAnimations.push(
     new Animation(
       createSpaceObject(
@@ -244,7 +247,8 @@ function createSceneGraph(gl, resources) {
   let flashlight = createSpaceObject(
     carGroup, resources.flashlight, 0.5,
     0, -65, -25,
-    -3, 2, -5
+    -3, 2, -5,
+    false
   )
   createLightSource(resources, flashlight, 0.17,
     0.9, 0, 0,
@@ -404,21 +408,46 @@ function createSpotLightSource(resources, parent, size, x, y, z) {
   return light;
 }
 
-function getMaterialNode(model) {
-
+function getMaterial(model) {
   return new MaterialSGNode(
     new RenderSGNode(model)
   );
 }
 
+function getSmoothMaterial(model) {
+
+  let material = getMaterial(model);
+  
+  // golden colour and shiny
+  material.ambient = [0.25, 0.2, 0.07, 1];
+  material.diffuse = [0.25, 0.2, 0.07, 1];
+  material.specular = [1, 1, 1, 1];
+  material.shininess = 1;
+
+  return material
+}
+
+function getMatteMaterial(model) {
+
+  let material = getMaterial(model);
+  
+  // grey colour and not shiny
+  material.ambient = [0.2, 0.2, 0.2, 1];
+  material.diffuse = [0.9, 0.9, 0.9, 1];
+  material.specular = [0, 0, 0, 1];
+  material.shininess = 100;
+
+  return material;
+}
+
 function createMoon(parent, x, y, z, radius) {
   
-  let planetMaterial = getMaterialNode(makeSphere(radius, prec, prec));
+  let planetMaterial = getMaterial(makeSphere(radius, prec, prec));
 
   // make reflect light from sun
   planetMaterial.ambient = [0.2, 0.2, 0.2, 1];  // changes (the color of) both sides
   planetMaterial.diffuse = [0.9, 0.9, 0.9, 1];  // changes (the color of) the lighted side 
-  planetMaterial.specular = [0.0, 0.0, 0.0, 1];    // so that there is no small light circle on the dark side of the planet
+  planetMaterial.specular = [0.0, 0.0, 0.0, 1]; // so that there is no small light circle on the dark side of the planet
   planetMaterial.shininess = 3;
 
   // set position
@@ -449,17 +478,10 @@ function createPlanet(parent, x, y, z, radius, duration, splits, isClockwise) {
 
 function createSpaceObject(parent, model, scale,
   degreesX, degreesY, degreesZ,
-  x, y, z,        // starting position when created
-  toX, toY, toZ,  // end position after animation
-  duration) {
+  x, y, z,
+  isShiny = true) {
   
-  let spaceshipMaterial = getMaterialNode(model);
-  
-  // make reflect light from sun
-  spaceshipMaterial.ambient = [0.2, 0.2, 0.2, 1];   // changes (the color of) both sides
-  spaceshipMaterial.diffuse = [0.9, 0.9, 0.9, 1];   // changes (the color of) the lighted side 
-  spaceshipMaterial.specular = [0.0, 0.0, 0.0, 1];  // so that there is no small light circle on the dark side of the spaceship
-  spaceshipMaterial.shininess = 3;
+  let spaceshipMaterial = isShiny ? getSmoothMaterial(model) : getMatteMaterial(model);
 
   let spaceship = new TransformationSGNode(
     glm.transform(
@@ -476,10 +498,33 @@ function createSpaceObject(parent, model, scale,
 
   parent.append(spaceship);
 
-  // 9 parameters are always needed, but only if the 4 additionals are given, create an animation
-  if (arguments.length > 9) {
-    addNonLoopingAnimation(spaceship, toX, toY, toZ, degreesX, degreesY, degreesZ, duration, scale);
-  }
+  return spaceship;
+}
+
+function createMovingSpaceObject(parent, model, scale,
+  degreesX, degreesY, degreesZ,
+  x, y, z,        // starting position when created
+  toX, toY, toZ,  // end position after animation
+  duration) {
+  
+  let spaceshipMaterial = getSmoothMaterial(model);
+
+  let spaceship = new TransformationSGNode(
+    glm.transform(
+      {
+        translate: [x, y, z],
+        rotateX: degreesX,
+        rotateY: degreesY,
+        rotateZ: degreesZ,
+        scale: scale
+      }
+    ),
+    spaceshipMaterial
+  )
+
+  parent.append(spaceship);
+
+  addNonLoopingAnimation(spaceship, toX, toY, toZ, degreesX, degreesY, degreesZ, duration, scale);
 
   return spaceship;
 }
